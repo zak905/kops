@@ -19,6 +19,7 @@ package dns
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -584,8 +585,15 @@ func (o *dnsOp) updateRecords(k recordKey, newRecords []string, ttl int64) error
 	}
 
 	klog.V(2).Infof("Adding DNS changes to batch %s %s", k, newRecords)
-	rr := rrsProvider.New(fqdn, newRecords, ttl, rrstype.RrsType(k.RecordType))
-	cs.Upsert(rr)
+	if isDigitalOceanProvider(zone) {
+		for _, record := range newRecords {
+			rr := rrsProvider.New(fqdn, []string{record}, ttl, rrstype.RrsType(k.RecordType))
+			cs.Upsert(rr)
+		}
+	} else {
+		rr := rrsProvider.New(fqdn, newRecords, ttl, rrstype.RrsType(k.RecordType))
+		cs.Upsert(rr)
+	}
 
 	return nil
 }
@@ -672,4 +680,8 @@ func (c *DNSController) CreateScope(scopeName string) (Scope, error) {
 	}
 	c.scopes[scopeName] = s
 	return s, nil
+}
+
+func isDigitalOceanProvider(zone dnsprovider.Zone) bool {
+	return reflect.TypeOf(zone).Elem().PkgPath() == "k8s.io/kops/dnsprovider/pkg/dnsprovider/providers/do"
 }
