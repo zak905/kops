@@ -186,7 +186,7 @@ func (r *resourceRecordSets) List() ([]dnsprovider.ResourceRecordSet, error) {
 	}
 
 	var rrsets []dnsprovider.ResourceRecordSet
-	var rrsetWithoutDups map[string]*resourceRecordSet
+	rrsetWithoutDups := make(map[string]*resourceRecordSet)
 
 	for _, record := range records {
 		// digitalocean API returns the record without the zone
